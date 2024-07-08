@@ -27,6 +27,14 @@ static void error(char *);
 static void startServer(const char *);
 static void respond(int);
 
+char    *method,    // "GET" or "POST"
+        *uri,       // "/index.html" things before '?'
+        *qs,        // "a=1&b=2"     things after  '?'
+        *prot;      // "HTTP/1.1"
+
+char    *payload;     // for POST
+int      payload_size;
+
 typedef struct { char *name, *value; } header_t;
 static header_t reqhdr[17] = { {"\0", "\0"} };
 static int clientfd;
