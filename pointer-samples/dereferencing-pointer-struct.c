@@ -5,24 +5,24 @@ typedef struct person
 {
     char *name;
     int age;
-    void (*method)(person);
+    void (*greet)(struct person);
 } person;
 
-void greet(person p);
+void greetImpl(person p);
 
 void main(int narg, char **varg) {
     person jose = {
         "jose",
         27,
-        greet
+        greetImpl
     };
 
     person *pptr = &jose;
 
     pptr -> age = 28;
-    pptr -> method(*pptr);
+    pptr -> greet(*pptr);
 }
 
-void greet(person p) {
+void greetImpl(person p) {
     printf("My name is %s, I'm %d", p.name, p.age);
 }
