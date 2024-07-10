@@ -2,8 +2,19 @@
 
 #include <stdio.h>
 
+int rapper();
+
+int return4();
+
 void main(int narg, char **varg) {
-    for (int i = 0; i < narg; i++) {
-        printf("Argument %d: %s\n", i, varg[i]);
-    }
+    printf("function return: %d", rapper(return4));
+}
+
+int return4() {
+    return 4;
+}
+
+int rapper(int fn()) {
+    printf("invoking rn whatever it is");
+    return fn();
 }
