@@ -1,22 +1,33 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 struct linked_element {
     void *value;
-    struct linked_element* next_element; 
+    struct linked_element* next; 
 };
 
-void main(int narg, char **varg) {
-    char *input;
-    scanf("%s", input);
-    struct linked_element* last_element;
-    last_element = malloc(sizeof(struct linked_element));
-    *last_element = (struct linked_element) { input, last_element };
+int main(int narg, char **varg) {
+    char input[100];
+    struct linked_element dummy = {NULL, NULL}, *tail = &dummy, *tmp;
 
-    while (*input != "exit")
-    {
-        struct linked_element* tmp_element = malloc(sizeof(struct linked_element));
-        *tmp_element = (struct linked_element) { input, last_element };
-        scanf("%s", input);
+    while (scanf("%s", input) && strcmp(input, "exit")) {
+        tmp = malloc(sizeof(struct linked_element));
+        tmp->value = strdup(input);
+        tmp->next = NULL;
+        tail->next = tmp;
+        tail = tmp;
     }
-    
+
+    for (tmp = dummy.next; tmp; tmp = tmp->next)
+        printf("%s\n", tmp->value);
+
+    while (dummy.next) {
+        tmp = dummy.next;
+        dummy.next = tmp->next;
+        free(tmp->value);
+        free(tmp);
+    }
+
+    return 0;
 }
