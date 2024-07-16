@@ -15,6 +15,6 @@ int return4() {
 }
 
 int rapper(int fn()) {
-    printf("invoking rn whatever it is");
+    printf("invoking fn whatever it is");
     return fn();
 }
