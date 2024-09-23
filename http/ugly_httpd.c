@@ -85,20 +85,9 @@ void serve_forever(const char *PORT)
         if (listenfd == -1) continue;
         if (bind(listenfd, p->ai_addr, p->ai_addrlen) == 0) break;
     }
-    if (p==NULL)
-    {
-        perror ("socket() or bind()");
-        exit(1);
-    }
 
     freeaddrinfo(res);
-
-    // listen for incoming connections
-    if ( listen (listenfd, 1000000) != 0 )
-    {
-        perror("listen() error");
-        exit(1);
-    }  
+    listen (listenfd, 1000000);
     
     // xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
     // end of start server!!!
