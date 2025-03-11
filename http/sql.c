@@ -41,11 +41,6 @@ void build_startup_message(char *buffer, char* user, char* database, int size) {
     write_int32(buffer, 196608, 4);
 }
 
-void build_query_message(char *buffer, char* query) {
-    sprintf(buffer,"Q    %s", query);          
-    write_int32(buffer, strlen(query) + 5, 1);                             
-}
-
 void write_to_fd(char* message, int fd, int total) {
     int sent = 0;
     int bytes = 0;
@@ -67,9 +62,8 @@ void write_to_fd(char* message, int fd, int total) {
 void read_from_fd(int fd, int total, char* response) {
     int bytes = 0,
         received = 0;
+    memset(response, 0, sizeof(response));
     do {
-       printf("%s", response);
-       memset(response, 0, sizeof(response));
        bytes = recv(fd, response, 1024, 0);
         if (bytes < 0)
            printf("ERROR reading response from socket");
@@ -82,6 +76,22 @@ void read_from_fd(int fd, int total, char* response) {
         error("ERROR storing complete response from socket");
 }
 
+int my_connect(struct hostent *server, char* host, int portno, struct sockaddr_in serv_addr) {
+    server = gethostbyname(host);
+    if (server == NULL) error("ERROR, no such host");
+    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) error("ERROR opening socket");
+    /* fill in the structure */
+    memset(&serv_addr,0,sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(portno);
+    memcpy(&serv_addr.sin_addr.s_addr,server->h_addr_list[0],server->h_length);
+            /* connect the socket */
+    if (connect(sockfd,(struct sockaddr *)&serv_addr,sizeof(serv_addr)) < 0)
+        error("ERROR connecting");
+    return sockfd;
+}
+
 int main(int argc,char *argv[])
 {
 
@@ -92,59 +102,44 @@ int main(int argc,char *argv[])
     char *message, response[4096];
     int portno = 5432;
     char *host = "localhost";
-    char *path = "/";
     char *user = argv[1];
     char *database = argv[2];
-
-    /* create the socket */
-    int sockfd;
-    server = gethostbyname(host);
-    if (server == NULL) error("ERROR, no such host");
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd < 0) error("ERROR opening socket");
-    /* fill in the structure */
-    memset(&serv_addr,0,sizeof(serv_addr));
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(portno);
-    memcpy(&serv_addr.sin_addr.s_addr,server->h_addr_list[0],server->h_length);
-            /* connect the socket */
-    if (connect(sockfd,(struct sockaddr *)&serv_addr,sizeof(serv_addr)) < 0)
-        error("ERROR connecting");
-            /* send the request */
-
+    int sockfd = my_connect(server, host, portno, serv_addr);
+    
     int startup_size = 8 + strlen("user") + strlen(user) + 2;
     startup_size += strlen("database") + strlen(database) + 2;
     startup_size += strlen("replication") + strlen("false") + 3;
     message = malloc(startup_size);
 
     build_startup_message(message, user, database, startup_size);
-    write_to_fd(message, STDOUT_FILENO, startup_size);
-    printf("\n");
-
-    printf("connecting...\n");
-    printf("socketfd %d\n", sockfd);
+    printf("Connecting...\n");
     write_to_fd(message, sockfd, startup_size);
     printf("Connection OK: \n");
 
     /* receive the response */
     printf("Response: \n");
-    received = recv(sockfd, response, sizeof(response) - 1, 0);
-    if (received < 0) {
-        perror("recv failed");
-    } else {
-        response[received] = '\0';  // Null-terminate for safety
-        printf("%s \n", response);  // Print the raw bytes received
+    read_from_fd(sockfd, sizeof(response), response);
+    write_to_fd(response, STDOUT_FILENO, sizeof(response));
+
+    char input[100];
+    printf("Type your query: \n");
+    while ( fgets(input, sizeof(input), stdin) && strcmp(input, "exit")) {
+        free(message);
+        printf("input len %d\n", strlen(input));
+        message = malloc(strlen(input) + 5);
+        sprintf(message, "Q    %s\0", input);
+        write_int32(message, strlen(input) + 5, 1);
+        printf("sprinted %s\n", message);
+        write_to_fd(message, sockfd, strlen(input) + 6);
+        printf("Query OK: \n");
+
+        
+        read_from_fd(sockfd, sizeof(response), response);
+        write_to_fd(response, STDOUT_FILENO, sizeof(response));
+        printf("Type your query: \n");
     }
 
     printf("\n");
-    free(message);
-    message = malloc(strlen("CREATE TABLE PRODUCTS(id int, name varchar(255))") + 5);
-    printf("malloqued\n");
-    build_query_message(message, "Q    CREATE TABLE PRODUCTS(id int, name varchar(255))");
-    printf("built\n");
-
-    write_to_fd(message, sockfd, strlen(message));
-    printf("Query OK: \n");
 
     /* close the socket */
     close(sockfd);
