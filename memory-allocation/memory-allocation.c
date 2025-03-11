@@ -9,7 +9,9 @@ struct linked_element {
 
 int main(int narg, char **varg) {
     char input[100];
-    struct linked_element dummy = {NULL, NULL}, *tail = &dummy, *tmp;
+    struct linked_element dummy = {NULL, NULL},
+                          *tail = &dummy,
+                          *tmp;
 
     while (scanf("%s", input) && strcmp(input, "exit")) {
         tmp = malloc(sizeof(struct linked_element));
