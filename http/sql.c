@@ -50,6 +50,7 @@ void write_to_fd(char* message, int fd, int total) {
             error("ERROR writing message to socket");
         if (bytes == 0)
             break;
+        printf("%d\n", bytes);
         printf("bytes written to %d:", fd);
         for (int i = 0; i < bytes; i++) { // Print first 10 bytes for debugging
             printf("%02X", (unsigned char)message[i]);
@@ -62,14 +63,17 @@ void write_to_fd(char* message, int fd, int total) {
 void read_from_fd(int fd, int total, char* response) {
     int bytes = 0,
         received = 0;
+    printf("%d\n", bytes);
     memset(response, 0, sizeof(response));
+    printf("%d\n", bytes);
     do {
-       bytes = recv(fd, response, 1024, 0);
+        bytes = recv(fd, response, 4096, 0);
         if (bytes < 0)
            printf("ERROR reading response from socket");
-       if (bytes == 0)
+        if (bytes == 0)
            break;
-       received+=bytes;
+        printf("%d\n", bytes);
+        received+=bytes;
     } while (1);
 
     if (received == total)
@@ -119,6 +123,7 @@ int main(int argc,char *argv[])
     /* receive the response */
     printf("Response: \n");
     read_from_fd(sockfd, sizeof(response), response);
+    printf("read end\n");
     write_to_fd(response, STDOUT_FILENO, sizeof(response));
 
     char input[100];
