@@ -6,6 +6,18 @@
 #include <netdb.h> /* struct hostent, gethostbyname */
 #include <netinet/in.h> /* struct sockaddr_in, struct sockaddr */
 
+struct row {
+    int column_amount;
+    char **values;
+    struct row *next_row;
+    
+};
+
+struct message {
+    int size;
+    char* content;
+};
+
 void error(const char *msg) { perror(msg); exit(0); }
 
 void write_int32(char *buffer, int32_t value, int p0) {
@@ -15,30 +27,31 @@ void write_int32(char *buffer, int32_t value, int p0) {
     buffer[p0+3] = (value)       & 0xFF;
 }
 
-void build_startup_message(char *buffer, char* user, char* database, int size) {
-    int offset = 8;
-
-    strcpy(buffer + offset, "user");
-    offset += strlen("user") + 1;
-
-    strcpy(buffer + offset, user);
-    offset += strlen(user) + 1;
-
-    strcpy(buffer + offset, "database");
-    offset += strlen("database") + 1;
-
-    strcpy(buffer + offset, database);
-    offset += strlen(database) + 1;
-
-    strcpy(buffer + offset, "replication");
-    offset += strlen("replication") + 1;
-
-    strcpy(buffer + offset, "false");
-    offset += strlen("false") + 1;
+struct message build_startup_message(char* user, char* database) {
+    int offset = 8, size = 15;
+    char* fields[6] = {
+        "user", user,
+        "database", database,
+        "replication", "false"
+    };
+    for(int i = 0; i < 6; i ++) {
+        size += strlen(fields[i]);
+    }
+    char* buffer = malloc(128);
+    for(int i = 0; i < 6; i ++) {
+        strcpy(buffer + offset, fields[i]);
+        offset += strlen(fields[i]) + 1;
+    }
 
     buffer[offset] = '\0'; 
     write_int32(buffer, size, 0);                                
     write_int32(buffer, 196608, 4);
+
+    struct message m;
+    m.size = size;
+    m.content = malloc(128);
+    m.content = buffer;
+    return m;
 }
 
 void write_to_fd(char* message, int fd, int total) {
@@ -54,92 +67,85 @@ void write_to_fd(char* message, int fd, int total) {
     } while (sent < total);
 }
 
-void read_from_fd_login(int fd, int total, char* response) {
-    int bytes = 0,
-        received = 0;
-    memset(response, 0, sizeof(response));
-    do {
-        bytes = recv(fd, response, 4096, 0);
-        if (bytes < 0)
-           printf("ERROR reading response from socket\n");
-        if (bytes == 0)
-           break;
-        if (bytes > 0 && response[8] == 0x00) {
-            printf("Login SUCCEDED\n");
-            break;
-        }
-        if (bytes > 0 && response[8] == 0x03) {
-            printf("Clear text PASSWORD required\n");
-            break;
-        }
-        if (bytes > 0 && response[8] == 0x05) {
-            printf("MD5 PASSWORD required\n");
-            printf("Salt: %c", response[9]);
-            break;
-        }
-        printf("%d\n", bytes);
-        received+=bytes;
-    } while (1);
-
-    if (received == total)
-        error("ERROR storing complete response from socket");
+void handle_login(char *response) {
+    if (response[8] == 0x00) {
+        printf("Login SUCCEDED\n");
+    }
+    if (response[8] == 0x03) {
+        printf("Clear text PASSWORD required\n");
+    }
+    if (response[8] == 0x05) {
+        printf("MD5 PASSWORD required\n");
+        printf("Salt: %c", response[9]);
+    }
 }
 
-void read_from_fd(int fd, int total, char* response) {
+struct row *handle_select(char* response) {
+    int column_amount, offset = 0;
+    column_amount = (response[5] << 8) | response[6];
+    int dataSizes[column_amount], dataTypes[column_amount];
+    char columnNames[column_amount][24];
+    offset = 7;
+
+    for(int i = 0; i < column_amount; i++) {
+        int nameSize = 0;
+        while (response[offset] != 0x00) {
+            columnNames[i][nameSize] = (char)response[offset];
+            nameSize++;
+            offset++;
+        }
+        columnNames[i][nameSize] = 0x00;
+        offset+=7;
+        dataTypes[i] = (response[offset] << 24) | (response[offset + 1] << 16) | (response[offset + 2] << 8) | response[offset + 3];
+        dataSizes[i] = (response[offset + 4] << 8) | response[offset + 5];
+        offset+=12;
+    }
+    for (int i = 0; i < column_amount; i++) {
+        printf("%s ", columnNames[i]);
+    }
+    printf("\n");
+    
+    struct row dummy_row;
+    while (response[offset] == 'D') {
+        struct row one_row;
+        one_row.column_amount = column_amount;
+        one_row.values = malloc(column_amount * sizeof(char*));
+        
+        offset++;
+        int rowSize = (response[offset ] << 24) | (response[offset + 1] << 16) | (response[offset + 2] << 8) | response[offset + 3];
+        offset += 6;
+        for(int i = 0; i < column_amount; i++) {
+            int columnSize = (response[offset] << 24) | (response[offset + 1] << 16) | (response[offset + 2] << 8) | response[offset + 3];
+            one_row.values[i] = malloc(columnSize);
+            offset+=4;
+            strncpy(one_row.values[i], &response[offset], columnSize);
+            struct row handler = dummy_row;
+            while (handler.next_row) {
+                handler = *handler.next_row;
+            }
+            handler.next_row = &one_row;
+        }
+        printf("\n");
+    }
+}
+
+struct row *read_from_fd(int fd, int total, char* response) {
     int bytes = 0,
-        received = 0;
+        received = 0,
+        offset = 0;
     memset(response, 0, sizeof(response));
     do {
         bytes = recv(fd, response, 4096, 0);
-        int size = 0, columnAmount, offset = 0;
         if (bytes < 0)
            printf("ERROR reading response from socket\n");
         if (bytes > 0) {
-            size = (response[1] << 24) | (response[2] << 16) | (response[3] << 8) | response[4];
+            if(response[0] == 'R') {
+                handle_login(response);
+            }
             if(response[0] == 'T') {
-                columnAmount = (response[5] << 8) | response[6];
-                int dataSizes[columnAmount], dataTypes[columnAmount];
-                char rowNames[columnAmount][24];
-                offset = 7;
-                for(int i = 0; i < columnAmount; i++) {
-                    int nameSize = 0;
-                    while (response[offset] != 0x00) {
-                        rowNames[i][nameSize] = (char)response[offset];
-                        nameSize++;
-                        offset++;
-                    }
-                    rowNames[i][nameSize] = 0x00;
-                    offset+=7;
-                    dataTypes[i] = (response[offset] << 24) | (response[offset + 1] << 16) | (response[offset + 2] << 8) | response[offset + 3];
-                    dataSizes[i] = (response[offset + 4] << 8) | response[offset + 5];
-                    offset+=12;
-                }
-                for (int i = 0; i < columnAmount; i++) {
-                    printf("%s ", rowNames[i]);
-                }
-                printf("\n");
-                /*
-                for (int i = offset; i < offset + 50; i++) {
-                    printf("%02X", (char)response[i]);
-                    //printf("%c", (char)response[i]);
-                }
-                */
-                while (response[offset] == 'D') {
-                    offset++;
-                    int rowSize = (response[offset ] << 24) | (response[offset + 1] << 16) | (response[offset + 2] << 8) | response[offset + 3];
-                    offset += 6;
-                    for(int i = 0; i < columnAmount; i++) {
-                        int columnSize = (response[offset] << 24) | (response[offset + 1] << 16) | (response[offset + 2] << 8) | response[offset + 3];
-                        offset+=4;
-                        for(int j = 0; j < columnSize; j++) {
-                            printf("%c", (char)response[offset]);
-                            offset++;
-                        }
-                        printf(" ");
-                    }
-                    printf("\n");
-                }
+                return handle_select(response);
             } else {
+                int size = (response[1] << 24) | (response[2] << 16) | (response[3] << 8) | response[4];
                 for (int i = 5; i < size; i++) {
                     //printf("%02X", (char)response[i]);
                     printf("%c", (char)response[i]);
@@ -154,7 +160,7 @@ void read_from_fd(int fd, int total, char* response) {
     } while (1);
 
     if (received == total)
-        error("ERROR storing complete response from socket");
+        error("ERROR storing complete response from socket");   
 }
 
 int my_connect(struct hostent *server, char* host, int portno, struct sockaddr_in serv_addr) {
@@ -180,7 +186,8 @@ int main(int argc,char *argv[])
     struct hostent *server;
     struct sockaddr_in serv_addr;
     int received;
-    char *message, response[4096];
+    char response[4096];
+    struct message message;
     int portno = 5432;
     char *host = "localhost";
     char *user = argv[1];
@@ -190,22 +197,29 @@ int main(int argc,char *argv[])
     int startup_size = 8 + strlen("user") + strlen(user) + 2;
     startup_size += strlen("database") + strlen(database) + 2;
     startup_size += strlen("replication") + strlen("false") + 3;
-    message = malloc(startup_size);
+    message = build_startup_message(user, database);
 
-    build_startup_message(message, user, database, startup_size);
+    
     printf("Connecting...\n");
-    write_to_fd(message, sockfd, startup_size);
-    read_from_fd_login(sockfd, sizeof(response), response);
+    write_to_fd(message.content, sockfd, message.size);
+    read_from_fd(sockfd, sizeof(response), response);
+    free(message.content);
 
     char input[100];
     printf("Type your query: \n");
     while ( fgets(input, sizeof(input), stdin) && strcmp(input, "exit")) {
-        free(message);
-        message = malloc(strlen(input) + 5);
-        sprintf(message, "Q    %s\0", input);
-        write_int32(message, strlen(input) + 5, 1);
-        write_to_fd(message, sockfd, strlen(input) + 6);
-        read_from_fd(sockfd, sizeof(response), response);
+        message.size = strlen(input) + 5;
+        message.content = malloc(message.size);
+        sprintf(message.content, "Q    %s\0", input);
+        write_int32(message.content, message.size, 1);
+        write_to_fd(message.content, sockfd, message.size + 1);
+        struct row result = *read_from_fd(sockfd, sizeof(response), response);
+        while(&result != NULL) {
+            for(int i  = 0; i < result.column_amount; i++) {
+                printf("%s", result.values[i]);
+            }
+            result = *result.next_row;
+        }
         printf("Type your query: \n");
     }
 
@@ -213,7 +227,7 @@ int main(int argc,char *argv[])
 
     /* close the socket */
     close(sockfd);
-    free(message);
+    free(message.content);
 
     return 0;
 }
