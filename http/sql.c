@@ -91,19 +91,18 @@ void read_from_fd(int fd, int total, char* response) {
     memset(response, 0, sizeof(response));
     do {
         bytes = recv(fd, response, 4096, 0);
-        int size = 0, rowAmount, offset = 0;
+        int size = 0, columnAmount, offset = 0;
         if (bytes < 0)
            printf("ERROR reading response from socket\n");
         if (bytes > 0) {
             size = (response[1] << 24) | (response[2] << 16) | (response[3] << 8) | response[4];
             if(response[0] == 'T') {
-                rowAmount = (response[5] << 8) | response[6];
-                int dataSizes[rowAmount], dataTypes[rowAmount];
-                char* rowNames[rowAmount];
+                columnAmount = (response[5] << 8) | response[6];
+                int dataSizes[columnAmount], dataTypes[columnAmount];
+                char rowNames[columnAmount][24];
                 offset = 7;
-                for(int i = 0; i < rowAmount; i++) {
+                for(int i = 0; i < columnAmount; i++) {
                     int nameSize = 0;
-                    rowNames[i] = malloc(16);
                     while (response[offset] != 0x00) {
                         rowNames[i][nameSize] = (char)response[offset];
                         nameSize++;
@@ -115,13 +114,35 @@ void read_from_fd(int fd, int total, char* response) {
                     dataSizes[i] = (response[offset + 4] << 8) | response[offset + 5];
                     offset+=12;
                 }
-                for (int i = 0; i < rowAmount; i++) {
-                    printf("%s %d %d\n", rowNames[i], dataTypes[i], dataSizes[i]);
+                for (int i = 0; i < columnAmount; i++) {
+                    printf("%s ", rowNames[i]);
+                }
+                printf("\n");
+                /*
+                for (int i = offset; i < offset + 50; i++) {
+                    printf("%02X", (char)response[i]);
+                    //printf("%c", (char)response[i]);
+                }
+                */
+                while (response[offset] == 'D') {
+                    offset++;
+                    int rowSize = (response[offset ] << 24) | (response[offset + 1] << 16) | (response[offset + 2] << 8) | response[offset + 3];
+                    offset += 6;
+                    for(int i = 0; i < columnAmount; i++) {
+                        int columnSize = (response[offset] << 24) | (response[offset + 1] << 16) | (response[offset + 2] << 8) | response[offset + 3];
+                        offset+=4;
+                        for(int j = 0; j < columnSize; j++) {
+                            printf("%c", (char)response[offset]);
+                            offset++;
+                        }
+                        printf(" ");
+                    }
+                    printf("\n");
                 }
             } else {
                 for (int i = 5; i < size; i++) {
                     //printf("%02X", (char)response[i]);
-                    printf("%c", (char)response[i]);
+                    printf("%c\n", (char)response[i]);
                 }
             }
             printf("\n");
@@ -183,9 +204,6 @@ int main(int argc,char *argv[])
         sprintf(message, "Q    %s\0", input);
         write_int32(message, strlen(input) + 5, 1);
         write_to_fd(message, sockfd, strlen(input) + 6);
-        printf("Query OK: \n");
-
-        
         read_from_fd(sockfd, sizeof(response), response);
         printf("Type your query: \n");
     }
