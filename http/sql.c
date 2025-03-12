@@ -142,8 +142,9 @@ void read_from_fd(int fd, int total, char* response) {
             } else {
                 for (int i = 5; i < size; i++) {
                     //printf("%02X", (char)response[i]);
-                    printf("%c\n", (char)response[i]);
+                    printf("%c", (char)response[i]);
                 }
+                printf("\n");
             }
             printf("\n");
             break;
@@ -212,8 +213,6 @@ int main(int argc,char *argv[])
 
     /* close the socket */
     close(sockfd);
-
-
     free(message);
 
     return 0;
