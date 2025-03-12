@@ -50,28 +50,83 @@ void write_to_fd(char* message, int fd, int total) {
             error("ERROR writing message to socket");
         if (bytes == 0)
             break;
-        printf("%d\n", bytes);
-        printf("bytes written to %d:", fd);
-        for (int i = 0; i < bytes; i++) { // Print first 10 bytes for debugging
-            printf("%02X", (unsigned char)message[i]);
-        }
-        printf("\n");
         sent+=bytes;
     } while (sent < total);
+}
+
+void read_from_fd_login(int fd, int total, char* response) {
+    int bytes = 0,
+        received = 0;
+    memset(response, 0, sizeof(response));
+    do {
+        bytes = recv(fd, response, 4096, 0);
+        if (bytes < 0)
+           printf("ERROR reading response from socket\n");
+        if (bytes == 0)
+           break;
+        if (bytes > 0 && response[8] == 0x00) {
+            printf("Login SUCCEDED\n");
+            break;
+        }
+        if (bytes > 0 && response[8] == 0x03) {
+            printf("Clear text PASSWORD required\n");
+            break;
+        }
+        if (bytes > 0 && response[8] == 0x05) {
+            printf("MD5 PASSWORD required\n");
+            printf("Salt: %c", response[9]);
+            break;
+        }
+        printf("%d\n", bytes);
+        received+=bytes;
+    } while (1);
+
+    if (received == total)
+        error("ERROR storing complete response from socket");
 }
 
 void read_from_fd(int fd, int total, char* response) {
     int bytes = 0,
         received = 0;
-    printf("%d\n", bytes);
     memset(response, 0, sizeof(response));
-    printf("%d\n", bytes);
     do {
         bytes = recv(fd, response, 4096, 0);
+        int size = 0, rowAmount, offset = 0;
         if (bytes < 0)
-           printf("ERROR reading response from socket");
-        if (bytes == 0)
-           break;
+           printf("ERROR reading response from socket\n");
+        if (bytes > 0) {
+            size = (response[1] << 24) | (response[2] << 16) | (response[3] << 8) | response[4];
+            if(response[0] == 'T') {
+                rowAmount = (response[5] << 8) | response[6];
+                int dataSizes[rowAmount], dataTypes[rowAmount];
+                char* rowNames[rowAmount];
+                offset = 7;
+                for(int i = 0; i < rowAmount; i++) {
+                    int nameSize = 0;
+                    rowNames[i] = malloc(16);
+                    while (response[offset] != 0x00) {
+                        rowNames[i][nameSize] = (char)response[offset];
+                        nameSize++;
+                        offset++;
+                    }
+                    rowNames[i][nameSize] = 0x00;
+                    offset+=7;
+                    dataTypes[i] = (response[offset] << 24) | (response[offset + 1] << 16) | (response[offset + 2] << 8) | response[offset + 3];
+                    dataSizes[i] = (response[offset + 4] << 8) | response[offset + 5];
+                    offset+=12;
+                }
+                for (int i = 0; i < rowAmount; i++) {
+                    printf("%s %d %d\n", rowNames[i], dataTypes[i], dataSizes[i]);
+                }
+            } else {
+                for (int i = 5; i < size; i++) {
+                    //printf("%02X", (char)response[i]);
+                    printf("%c", (char)response[i]);
+                }
+            }
+            printf("\n");
+            break;
+        }
         printf("%d\n", bytes);
         received+=bytes;
     } while (1);
@@ -118,29 +173,20 @@ int main(int argc,char *argv[])
     build_startup_message(message, user, database, startup_size);
     printf("Connecting...\n");
     write_to_fd(message, sockfd, startup_size);
-    printf("Connection OK: \n");
-
-    /* receive the response */
-    printf("Response: \n");
-    read_from_fd(sockfd, sizeof(response), response);
-    printf("read end\n");
-    write_to_fd(response, STDOUT_FILENO, sizeof(response));
+    read_from_fd_login(sockfd, sizeof(response), response);
 
     char input[100];
     printf("Type your query: \n");
     while ( fgets(input, sizeof(input), stdin) && strcmp(input, "exit")) {
         free(message);
-        printf("input len %d\n", strlen(input));
         message = malloc(strlen(input) + 5);
         sprintf(message, "Q    %s\0", input);
         write_int32(message, strlen(input) + 5, 1);
-        printf("sprinted %s\n", message);
         write_to_fd(message, sockfd, strlen(input) + 6);
         printf("Query OK: \n");
 
         
         read_from_fd(sockfd, sizeof(response), response);
-        write_to_fd(response, STDOUT_FILENO, sizeof(response));
         printf("Type your query: \n");
     }
 
