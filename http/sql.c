@@ -80,9 +80,9 @@ void handle_login(char *response) {
     }
 }
 
-int handle_select(char* response, struct row *rows) {
-    int column_amount, offset = 0;
-    column_amount = (response[5] << 8) | response[6];
+int handle_select(char* response, struct row *rows, int size) {
+    int column_amount = (response[5] << 8) | response[6],
+        offset;
     int dataSizes[column_amount], dataTypes[column_amount];
     char columnNames[column_amount][24];
     offset = 7;
@@ -105,6 +105,8 @@ int handle_select(char* response, struct row *rows) {
     }
     printf("\n");
     
+    if(response[offset] == 'C') return 1;
+
     struct row* head = NULL;
     struct row *tail = head;
     while (response[offset] == 'D') {
@@ -152,7 +154,7 @@ int read_from_fd(int fd, struct row* rows) {
                 handle_login(response);
             }
             if(response[0] == 'T') {
-                return handle_select(response, rows);
+                return handle_select(response, rows, bytes);
             } else {
                 int size = (response[1] << 24) | (response[2] << 16) | (response[3] << 8) | response[4];
                 for (int i = 5; i < size; i++) {
