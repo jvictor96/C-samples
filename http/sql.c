@@ -105,8 +105,8 @@ int handle_select(char* response, struct row *rows) {
     }
     printf("\n");
     
-    struct row* dummy_row = NULL;
-    struct row *tail = dummy_row;
+    struct row* head = NULL;
+    struct row *tail = head;
     while (response[offset] == 'D') {
         struct row *one_row = malloc(sizeof(struct row));
         one_row->column_amount = column_amount;
@@ -125,15 +125,15 @@ int handle_select(char* response, struct row *rows) {
             one_row->values[i][columnSize] = '\0';
         }
         
-        if(!dummy_row) {
+        if(!head) {
             tail = one_row;
-            dummy_row = one_row;
+            head = one_row;
         } else {
             tail->next_row = one_row;
             tail = one_row;
         }
     }
-    *rows = *dummy_row;
+    *rows = *head;
     return 0;
 }
 
@@ -187,6 +187,25 @@ int my_connect(struct hostent *server, char* host, int portno, struct sockaddr_i
     return sockfd;
 }
 
+void execute_query(struct message message, int sockfd) {
+    struct row *result;
+    write_int32(message.content, message.size, 1);
+    write_to_fd(message.content, sockfd, message.size + 1);
+    if(read_from_fd(sockfd, result) == 0) {
+        while(result->next_row) {
+            for(int i  = 0; i < result->column_amount; i++) {
+                printf("%s ", result->values[i]);
+            }
+            result = result->next_row;
+            printf("\n");
+        }
+        for(int i  = 0; i < result->column_amount; i++) {
+            printf("%s ", result->values[i]);
+        }
+        printf("\n\n");
+    }
+}
+
 int main(int argc,char *argv[])
 {
 
@@ -201,7 +220,6 @@ int main(int argc,char *argv[])
     char *user = argv[1];
     char *database = argv[2];
     int sockfd = my_connect(server, host, portno, serv_addr);
-    struct row result;
     
     int startup_size = 8 + strlen("user") + strlen(user) + 2;
     startup_size += strlen("database") + strlen(database) + 2;
@@ -211,7 +229,7 @@ int main(int argc,char *argv[])
     
     printf("Connecting...\n");
     write_to_fd(message.content, sockfd, message.size);
-    read_from_fd(sockfd, &result);
+    read_from_fd(sockfd, NULL);
 
     char input[100];
     printf("Type your query: \n");
@@ -220,21 +238,7 @@ int main(int argc,char *argv[])
         message.size = strlen(input) + 5;
         message.content = malloc(message.size);
         sprintf(message.content, "Q    %s\0", input);
-        write_int32(message.content, message.size, 1);
-        write_to_fd(message.content, sockfd, message.size + 1);
-        if(read_from_fd(sockfd, &result) == 0) {
-            while(result.next_row) {
-                for(int i  = 0; i < result.column_amount; i++) {
-                    printf("%s ", result.values[i]);
-                }
-                result = *result.next_row;
-                printf("\n");
-            }
-            for(int i  = 0; i < result.column_amount; i++) {
-                printf("%s ", result.values[i]);
-            }
-            printf("\n");
-        }
+        execute_query(message, sockfd);
         printf("Type your query: \n");
     }
 
