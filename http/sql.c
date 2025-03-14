@@ -80,7 +80,7 @@ void handle_login(char *response) {
     }
 }
 
-int handle_select(char* response, struct row *rows, int size) {
+int handle_select(char* response, struct row **rows, int size) {
     int column_amount = (response[5] << 8) | response[6],
         offset;
     int dataSizes[column_amount], dataTypes[column_amount];
@@ -108,7 +108,7 @@ int handle_select(char* response, struct row *rows, int size) {
     if(response[offset] == 'C') return 1;
 
     struct row* head = NULL;
-    struct row *tail = head;
+    struct row *tail = NULL;
     while (response[offset] == 'D') {
         struct row *one_row = malloc(sizeof(struct row));
         one_row->column_amount = column_amount;
@@ -135,11 +135,11 @@ int handle_select(char* response, struct row *rows, int size) {
             tail = one_row;
         }
     }
-    *rows = *head;
+    *rows = head;
     return 0;
 }
 
-int read_from_fd(int fd, struct row* rows) {
+int read_from_fd(int fd, struct row** rows) {
     int bytes = 0,
         received = 0,
         offset = 0;
@@ -193,16 +193,29 @@ void execute_query(struct message message, int sockfd) {
     struct row *result;
     write_int32(message.content, message.size, 1);
     write_to_fd(message.content, sockfd, message.size + 1);
-    if(read_from_fd(sockfd, result) == 0) {
-        while(result->next_row) {
+    if(read_from_fd(sockfd, &result) == 0) {
+        struct row *head = result;
+        while(result) {
             for(int i  = 0; i < result->column_amount; i++) {
                 printf("%s ", result->values[i]);
             }
             result = result->next_row;
             printf("\n");
         }
+        printf("\n");
+        result = head;
         for(int i  = 0; i < result->column_amount; i++) {
             printf("%s ", result->values[i]);
+        }
+        printf("\n");
+        while (result) {
+            struct row *next = result->next_row; // Save next node
+            for (int i = 0; i < result->column_amount; i++) {
+                free(result->values[i]); // Free each column value
+            }
+            free(result->values); // Free the array of values
+            free(result);         // Free the row struct itself
+            result = next;        // Move to next node
         }
         printf("\n\n");
     }
