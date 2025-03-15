@@ -173,7 +173,10 @@ int read_from_fd(int fd, struct row** rows) {
     return 1;
 }
 
-int my_connect(struct hostent *server, char* host, int portno, struct sockaddr_in serv_addr) {
+int my_connect(char* host, int portno, char* user, char* database) {
+    struct hostent *server;
+    struct sockaddr_in serv_addr;
+    struct message message;
     server = gethostbyname(host);
     if (server == NULL) error("ERROR, no such host");
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -186,10 +189,25 @@ int my_connect(struct hostent *server, char* host, int portno, struct sockaddr_i
             /* connect the socket */
     if (connect(sockfd,(struct sockaddr *)&serv_addr,sizeof(serv_addr)) < 0)
         error("ERROR connecting");
+    
+    int startup_size = 8 + strlen("user") + strlen(user) + 2;
+    startup_size += strlen("database") + strlen(database) + 2;
+    startup_size += strlen("replication") + strlen("false") + 3;
+    message = build_startup_message(user, database);
+    printf("Connecting...\n");
+    write_to_fd(message.content, sockfd, message.size);
+    read_from_fd(sockfd, NULL);
+
+    free(message.content);
     return sockfd;
 }
 
-void execute_query(struct message message, int sockfd) {
+void execute_query(char* input, int sockfd) {
+    struct message message;
+    message.size = strlen(input) + 5;
+    message.content = malloc(message.size);
+    sprintf(message.content, "Q    %s\0", input);
+
     struct row *result;
     write_int32(message.content, message.size, 1);
     write_to_fd(message.content, sockfd, message.size + 1);
@@ -202,12 +220,6 @@ void execute_query(struct message message, int sockfd) {
             result = result->next_row;
             printf("\n");
         }
-        printf("\n");
-        result = head;
-        for(int i  = 0; i < result->column_amount; i++) {
-            printf("%s ", result->values[i]);
-        }
-        printf("\n");
         while (result) {
             struct row *next = result->next_row; // Save next node
             for (int i = 0; i < result->column_amount; i++) {
@@ -219,41 +231,22 @@ void execute_query(struct message message, int sockfd) {
         }
         printf("\n\n");
     }
+    free(message.content);
 }
 
 int main(int argc,char *argv[])
 {
-
-    int i;
-    struct hostent *server;
-    struct sockaddr_in serv_addr;
-    int received;
-    char response[4096];
-    struct message message;
     int portno = 5432;
     char *host = "localhost";
     char *user = argv[1];
     char *database = argv[2];
-    int sockfd = my_connect(server, host, portno, serv_addr);
-    
-    int startup_size = 8 + strlen("user") + strlen(user) + 2;
-    startup_size += strlen("database") + strlen(database) + 2;
-    startup_size += strlen("replication") + strlen("false") + 3;
-    message = build_startup_message(user, database);
 
-    
-    printf("Connecting...\n");
-    write_to_fd(message.content, sockfd, message.size);
-    read_from_fd(sockfd, NULL);
+    int sockfd = my_connect(host, portno, user, database);
 
     char input[100];
     printf("Type your query: \n");
     while ( fgets(input, sizeof(input), stdin) && strcmp(input, "exit")) {
-        free(message.content);
-        message.size = strlen(input) + 5;
-        message.content = malloc(message.size);
-        sprintf(message.content, "Q    %s\0", input);
-        execute_query(message, sockfd);
+        execute_query(input, sockfd);
         printf("Type your query: \n");
     }
 
@@ -261,7 +254,6 @@ int main(int argc,char *argv[])
 
     /* close the socket */
     close(sockfd);
-    free(message.content);
 
     return 0;
 }
