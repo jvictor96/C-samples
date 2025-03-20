@@ -22,6 +22,12 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
+void copyString(char *from, char *to) {
+    while(*from) 
+        *to++ = *from++;
+    *to = '\0';
+}
+
 char *get_last_position1(char * first_postion) {
     char *i = first_postion;
     for(i = first_postion; *i != '\0'; i++) {

@@ -1,0 +1,20 @@
+{
+    "files.associations": {
+        "stdio.h": "c",
+        "system_error": "c",
+        "array": "c",
+        "hash_map": "c",
+        "bitset": "c",
+        "string_view": "c",
+        "format": "c",
+        "initializer_list": "c",
+        "span": "c",
+        "valarray": "c",
+        "random": "c",
+        "sql.h": "c",
+        "l2cap.h": "c",
+        "string.h": "c",
+        "list": "c",
+        "any": "c"
+    }
+}
