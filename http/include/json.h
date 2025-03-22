@@ -1,3 +1,6 @@
+#ifndef _MJSON___
+#define _MJSON___
+
 struct element {
     struct element *next, *prev, *list;
     char *value;
@@ -15,3 +18,5 @@ int getNth(struct element, int, struct element **);
 int getValue(struct element, char *, struct element **);
 int parseString(char *, struct element **);
 void serialize(struct element *parsed_data, char end_line, char** result);
+
+#endif
