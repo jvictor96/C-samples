@@ -14,6 +14,13 @@ void route()
     {
         printf("HTTP/1.1 200 OK\r\n\r\n");
         printf("Hello! You are using %s", request_header("User-Agent"));
+        printf("Query string = %s", qs);
+    }
+
+    ROUTE_GET("/all")
+    {
+        printf("HTTP/1.1 200 OK\r\n\r\n");
+        printf("Hello! You are using %s", request_header("User-Agent"));
     }
 
     ROUTE_POST("/")
