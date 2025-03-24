@@ -1,15 +1,7 @@
-#ifndef _PSQL_H___
-#define _PSQL_H___
+#ifndef _QS_PARSER___
+#define _QS_PARSER___
 
-struct row {
-    int column_amount;
-    char **values;
-    struct row *next_row;
-    
-};
-
-int my_connect(char* host, int portno, char* user, char* database);
-void execute_query(char* input, int sockfd, struct row **result);
-void free_result(struct row **result);
+int parse_qs(char*, struct qs_element*);
+int get_value(char*, char**, struct qs_element*);
 
 #endif

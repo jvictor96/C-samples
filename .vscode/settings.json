@@ -15,6 +15,8 @@
         "l2cap.h": "c",
         "string.h": "c",
         "list": "c",
-        "any": "c"
+        "any": "c",
+        "qs_parser.h": "c",
+        "json.h": "c"
     }
 }

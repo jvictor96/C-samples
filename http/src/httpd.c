@@ -17,7 +17,8 @@
 char    *method,    // "GET" or "POST"
         *uri,       // "/index.html" things before '?'
         *qs,        // "a=1&b=2"     things after  '?'
-        *prot;      // "HTTP/1.1"
+        *prot,      // "HTTP/1.1"
+        *shortened_uri;
 
 char    *payload;     // for POST
 int      payload_size;
@@ -155,9 +156,23 @@ void respond(int n)
     {
         buf[rcvd] = '\0';
 
-        method = strtok(buf,  " \t\r\n");
-        uri    = strtok(NULL, " \t");
-        prot   = strtok(NULL, " \t\r\n"); 
+        method              = strtok(buf,  " \t\r\n");
+        uri                 = strtok(NULL, " \t");
+        prot                = strtok(NULL, " \t\r\n"); 
+        shortened_uri = malloc(128);
+
+        const char *lastSlash = strrchr(uri, '/');  // Find last '/'
+        
+        if (lastSlash) {
+            size_t length = lastSlash - uri;  // Length before last '/'
+            strncpy(shortened_uri, uri, length);
+            shortened_uri[length] = '\0';  // Null-terminate
+        } else {
+            strcpy(shortened_uri, uri);  // No '/' found, copy whole string
+        }
+
+        printf("Full URI: %s\n", uri);
+        printf("Trimmed URI: %s\n", shortened_uri);  // Expected: "abc/def"
 
         fprintf(stderr, "\x1b[32m + [%s] %s\x1b[0m\n", method, uri);
         
@@ -171,7 +186,7 @@ void respond(int n)
         header_t *h = reqhdr;
         char *t, *t2;
         while(h < reqhdr+16) {
-            char *k,*v,*t;
+            char *k,*v;
             k = strtok(NULL, "\r\n: \t"); if (!k) break;
             v = strtok(NULL, "\r\n");     while(*v && *v==' ') v++;
             h->name  = k;

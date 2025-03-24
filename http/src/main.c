@@ -17,17 +17,22 @@ void route()
         printf("Query string = %s", qs);
     }
 
-    ROUTE_GET("/all")
+    ROUTE_GET("/product")
     {
+        const char *last_part;
+        const char *lastSlash = strrchr(uri, '/');  // Find last '/'
+        if (lastSlash) {
+            last_part = lastSlash + 1;  // Move past the '/'
+        }
         printf("HTTP/1.1 200 OK\r\n\r\n");
-        printf("Hello! You are using %s", request_header("User-Agent"));
+        printf("%s", last_part);
     }
 
     ROUTE_POST("/")
     {
         printf("HTTP/1.1 200 OK\r\n\r\n");
         printf("Wow, seems that you POSTed %d bytes. \r\n", payload_size);
-        printf("Fetch the data using `payload` variable.");
+        printf("%s\r\n", payload);
     }
   
     ROUTE_END()
