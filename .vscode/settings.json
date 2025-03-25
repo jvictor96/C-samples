@@ -17,6 +17,9 @@
         "list": "c",
         "any": "c",
         "qs_parser.h": "c",
-        "json.h": "c"
+        "json.h": "c",
+        "repository.h": "c",
+        "httpd.h": "c",
+        "type_traits": "c"
     }
 }

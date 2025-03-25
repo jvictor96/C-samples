@@ -3,12 +3,19 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-int getNth(struct element head, int n, struct element **result) {
-    if(head.type == DICT || head.size < n) {
+int LIST = 1;
+int DICT = 2;
+int STRING = 3;
+
+int OPEN = 100;
+int CLOSED = 101;
+
+int getNth(struct element *head, int n, struct element **result) {
+    if(head->type == DICT || head->size < n) {
         return 1;
     }
 
-    *result = &head;
+    *result = head;
     for(int i = 0; i < n; i++) {
         if (!(*result)->next) {
             return 1;  // Out of bounds
@@ -36,17 +43,20 @@ int getLast(struct element head, struct element **result) {
     }
 };
 
-int getValue(struct element head, char * key, struct element **result) {
-    if(head.type == LIST) {
+int getValue(struct element *head, char * key, struct element **result) {
+    if(head->type == LIST) {
         return 1;
     }
 
-    *result = &head;
-    int i = 0;
+    *result = head;
     while (*result) {
+        printf("checking %s", (*result)->value);
         if (strcmp((*result)->value, key) == 0) {
+            printf("found");
+            *result = (*result)->next;
             return 0;  // Found key
         }
+        *result = (*result)->next;
         *result = (*result)->next;
     }
 }
@@ -175,7 +185,7 @@ void print_rec(struct element *head, int type, char end_line, char** result) {
                 print_rec(node_ptr->list, node_ptr->type, end_line, result);
                 sprintf(*result, "%s%c] ", *result, end_line);
                 if(node_ptr->next) {
-                    sprintf(*result, "%s,", *result, end_line);
+                    sprintf(*result, "%s,", *result);
                 }
             }
             

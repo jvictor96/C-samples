@@ -1,5 +1,5 @@
-#ifndef _MJSON___
-#define _MJSON___
+#ifndef __MJSON_H__
+#define __MJSON_H__
 
 struct element {
     struct element *next, *prev, *list;
@@ -7,15 +7,14 @@ struct element {
     int type, size, list_id, open;
 };
 
-const int LIST = 1;
-const int DICT = 2;
-const int STRING = 3;
+extern int LIST,
+        DICT,
+        STRING,
+        OPEN,
+        CLOSED;
 
-const int OPEN = 100;
-const int CLOSED = 101;
-
-int getNth(struct element, int, struct element **);
-int getValue(struct element, char *, struct element **);
+int getNth(struct element*, int, struct element **);
+int getValue(struct element*, char *, struct element **);
 int parseString(char *, struct element **);
 void serialize(struct element *parsed_data, char end_line, char** result);
 

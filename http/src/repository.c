@@ -6,17 +6,18 @@
 
 int ddl(int sockfd) {
     struct row *result;
-    execute_query("CREATE TABLE product(id int, name varchar(99), price float)", sockfd, &result);
+    execute_query("CREATE TABLE IF NOT EXISTS product(id int, name varchar(99), price float)", sockfd, &result);
 }
 
-int post_product(char* name, float price, int sockfd) {
+int post_product(char* name, char price, int sockfd) {
     struct row *result;
     execute_query("SELECT COUNT(id) FROM PRODUCT", sockfd, &result);
     int id = atoi(result->values[0]);
     free_result(&result);
     char insert[100];
-    sprintf(insert, "INSERT INTO PRODUCT(id, name, price) VALUES(%d, '%s', %f)", id, name, price);
+    sprintf(insert, "INSERT INTO PRODUCT(id, name, price) VALUES(%d, '%s', %s)", id, name, price);
     execute_query(insert, sockfd, &result);
+    return id;
 }
 
 int get_all(struct row **result, int sockfd) {
