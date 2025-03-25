@@ -10,19 +10,6 @@ int STRING = 3;
 int OPEN = 100;
 int CLOSED = 101;
 
-int getNth(struct element *head, int n, struct element **result) {
-    if(head->type == DICT || head->size < n) {
-        return 1;
-    }
-
-    *result = head;
-    for(int i = 0; i < n; i++) {
-        if (!(*result)->next) {
-            return 1;  // Out of bounds
-        }
-        *result = (*result)->next;
-    }
-};
 
 int getFirst(struct element tail, struct element **result) {
     // It returns the first element, not the anchor
@@ -36,29 +23,55 @@ int getFirst(struct element tail, struct element **result) {
 };
 
 
-int getLast(struct element head, struct element **result) {
-    *result = head.list;
+int getLast(struct element *head, struct element **result) {
+    *result = head->list;
     while(result && (*result)->next) {
         *result = (*result)->next;
     }
 };
+
+int getNth(struct element *head, int n, struct element **result) {
+    *result = head->list;
+    for(int i = 0; i < n; i++) {
+        if (!(*result)->next) {
+            return 1;  // Out of bounds
+        }
+        *result = (*result)->next;
+    }
+};
+
+int addItem(struct element *head, struct element **item) {
+    struct element *tail;
+    getLast(head, &tail);
+    tail->next = *item;
+    (*item)->prev = tail;
+    return 0;
+}
 
 int getValue(struct element *head, char * key, struct element **result) {
     if(head->type == LIST) {
         return 1;
     }
 
-    *result = head;
+    *result = head->list;
     while (*result) {
-        printf("checking %s", (*result)->value);
         if (strcmp((*result)->value, key) == 0) {
-            printf("found");
-            *result = (*result)->next;
+                *result = (*result)->next;
             return 0;  // Found key
         }
         *result = (*result)->next;
         *result = (*result)->next;
     }
+}
+
+int addValue(struct element *head, struct element **key, struct element **value) {
+    struct element *tail;
+    getLast(head, &tail);
+    tail->next = *key;
+    (*key)->prev = tail;
+    (*key)->next = *value;
+    (*value)->prev = *key;
+    return 0;
 }
 
 void putElementList(struct element **result, struct element **element_ptr, int type, int list_id) {
@@ -84,7 +97,7 @@ void putElementList(struct element **result, struct element **element_ptr, int t
     } else if (((*element_ptr)->type == LIST || (*element_ptr)->type == DICT)
     && (*element_ptr)->open == OPEN){
         struct element *tail;
-        getLast(**element_ptr, &tail);
+        getLast(*element_ptr, &tail);
         tail->next = new_elem;
         new_elem->list_id = tail->list_id;
     } else {
@@ -214,5 +227,5 @@ void serialize(struct element *parsed_data, char end_line, char** result) {
     sprintf(*result, "{%c", end_line);
     print_rec(parsed_data->list, DICT, end_line, result);
     sprintf(*result, "%s%c}", *result, end_line);
-    printf("%s\n", *result);
+    //printf("%s\n", *result);
 }
