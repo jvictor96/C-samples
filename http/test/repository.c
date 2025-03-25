@@ -1,3 +1,7 @@
+#include <repository.h>
+#include <sql.h>
+#include <unistd.h> /* read, write, close */
+
 int main(int argc,char *argv[])
 {
     int portno = 5432;
@@ -8,9 +12,9 @@ int main(int argc,char *argv[])
     int sockfd = my_connect(host, portno, user, database);
 
     ddl(sockfd);
-    post_product("cocacola", 4, sockfd);
-    post_product("itaipava", 3, sockfd);
-    post_product("heineken", 7.5, sockfd);
+    post_product("cocacola", "4", sockfd);
+    post_product("itaipava", "3", sockfd);
+    post_product("heineken", "7.5", sockfd);
     struct row *result;
     get_all(&result, sockfd);
     free_result(&result);

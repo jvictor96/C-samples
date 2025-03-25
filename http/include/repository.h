@@ -1,6 +1,8 @@
 #ifndef _REPO_H___
 #define _REPO_H___
 
+#include <sql.h>
+
 int ddl(int sockfd);
 int post_product(char* name, char* price, int sockfd);
 int get_all(struct row **result, int sockfd);

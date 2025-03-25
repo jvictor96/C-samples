@@ -95,10 +95,6 @@ int handle_select(char* response, struct row **rows, int size) {
         dataSizes[i] = (response[offset + 4] << 8) | response[offset + 5];
         offset+=12;
     }
-    for (int i = 0; i < column_amount; i++) {
-        printf("%s ", columnNames[i]);
-    }
-    printf("\n");
     
     if(response[offset] == 'C') return 1;
 
@@ -142,8 +138,6 @@ int read_from_fd(int fd, struct row** rows) {
     memset(response, 0, sizeof(response));
     do {
         bytes = recv(fd, response, 4096, 0);
-        if (bytes < 0)
-           printf("ERROR reading response from socket\n");
         if (bytes > 0) {
             if(response[0] == 'R') {
                 handle_login(response);
@@ -154,14 +148,14 @@ int read_from_fd(int fd, struct row** rows) {
                 int size = (response[1] << 24) | (response[2] << 16) | (response[3] << 8) | response[4];
                 for (int i = 5; i < size; i++) {
                     //printf("%02X", (char)response[i]);
-                    printf("%c", (char)response[i]);
+                    //printf("%c", (char)response[i]);
                 }
-                printf("\n");
+                //printf("\n");
             }
-            printf("\n");
+            //printf("\n");
             break;
         }
-        printf("%d\n", bytes);
+        //printf("%d\n", bytes);
         received+=bytes;
     } while (1);
         
@@ -192,6 +186,7 @@ int my_connect(char* host, int portno, char* user, char* database) {
     printf("Connecting...\n");
     write_to_fd(message.content, sockfd, message.size);
     read_from_fd(sockfd, NULL);
+    printf("Connected\n");
 
     free(message.content);
     return sockfd;
@@ -209,11 +204,7 @@ void execute_query(char* input, int sockfd, struct row **result) {
         struct row *head = *result;
         struct row *node_ptr = *result;
         while(node_ptr) {
-            for(int i  = 0; i < node_ptr->column_amount; i++) {
-                printf("%s ", node_ptr->values[i]);
-            }
             node_ptr = node_ptr->next_row;
-            printf("\n");
         }
         *result = head;
     }

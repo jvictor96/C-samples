@@ -25,6 +25,8 @@ char *request_header(const char* name);
 
 void route();
 
+void comment();
+
 // some interesting macro for `route()`
 #define ROUTE_START()                   if (0) {
 #define ROUTE(METHOD,URI)               } else if ((strcmp(URI,uri)==0||strcmp(URI,shortened_uri)==0)&&strcmp(METHOD,method)==0) {

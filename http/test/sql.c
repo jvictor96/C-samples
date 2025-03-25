@@ -1,5 +1,7 @@
 #include <sql.h>
 #include <stdio.h> /* printf, sprintf */
+#include <unistd.h> /* read, write, close */
+#include <string.h> /* read, write, close */
 
 int main(int argc,char *argv[])
 {
@@ -14,8 +16,8 @@ int main(int argc,char *argv[])
     printf("Type your query: \n");
     while ( fgets(input, sizeof(input), stdin) && strcmp(input, "exit")) {
         struct row *result;
-        execute_query(input, sockfd, result);
-        free_result(result);
+        execute_query(input, sockfd, &result);
+        free_result(&result);
         printf("Type your query: \n");
     }
 

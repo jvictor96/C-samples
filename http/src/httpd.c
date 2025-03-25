@@ -196,7 +196,7 @@ void respond(int n)
             t = v + 1 + strlen(v);
             if (t[1] == '\r' && t[2] == '\n') break;
         }
-        t++; // now the *t shall be the beginning of user payload
+        t+=3; // now the *t shall be the beginning of user payload
         t2 = request_header("Content-Length"); // and the related header if there is  
         payload = t;
         payload_size = t2 ? atol(t2) : (rcvd-(t-buf));

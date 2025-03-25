@@ -20,6 +20,7 @@
         "json.h": "c",
         "repository.h": "c",
         "httpd.h": "c",
-        "type_traits": "c"
+        "type_traits": "c",
+        "unistd.h": "c"
     }
 }

@@ -28,11 +28,9 @@ int main(int argc,char *argv[])
     getValue(child, "name", &child_name);
     printf("child name %s\n", child_name->value);
 
-    struct element  *cash = malloc(sizeof(struct element)),
-                    *cash_val = malloc(sizeof(struct element));
-    cash->value = "cash";
-    cash_val->value = "8450.50";
-    addValue(parsed_data, &cash, &cash_val);
+    struct element  *cash = malloc(sizeof(struct element));
+    parseString("{\"cash\": \"1850.0\"}", &cash);
+    addValue(parsed_data, &cash->list, &cash->list->next);
 
     getValue(parsed_data, "cash", &cash);
     printf("cash %s\n", cash->value);
