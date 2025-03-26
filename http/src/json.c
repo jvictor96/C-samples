@@ -25,7 +25,7 @@ int getFirst(struct element tail, struct element **result) {
 
 int getLast(struct element *head, struct element **result) {
     *result = head->list;
-    while(result && (*result)->next) {
+    while(*result && (*result)->next) {
         *result = (*result)->next;
     }
 };
@@ -72,6 +72,17 @@ int addValue(struct element *head, struct element **key, struct element **value)
     (*key)->next = *value;
     (*value)->prev = *key;
     return 0;
+}
+
+struct element element_builder(int type) {
+    struct element new_e = {
+        .next = NULL, 
+        .prev = NULL, 
+        .list = NULL,
+        .value = NULL,
+        .type = type
+    };
+    return new_e;
 }
 
 void putElementList(struct element **result, struct element **element_ptr, int type, int list_id) {

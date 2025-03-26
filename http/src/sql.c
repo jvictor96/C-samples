@@ -25,30 +25,42 @@ void write_int32(char *buffer, int32_t value, int p0) {
 
 void to_json(struct row *head, char** header, struct element **result) {
     struct element *new_element = malloc(sizeof(struct element));
+    struct element *element_head = new_element;
+    new_element->list = NULL;
     new_element->type = LIST;
     *result = new_element;
     while(head) {
-        new_element->list = malloc(sizeof(struct element));
-        new_element = new_element->list;
-        new_element->type = DICT;
-        new_element->list = malloc(sizeof(struct element));
-        new_element = new_element->list;
-        new_element->value = header[0];
-        new_element->type = STRING;
-        new_element->next = malloc(sizeof(struct element));
-        new_element = new_element->next;
-        new_element->value = head->values[0];
-        new_element->type = STRING;
-        for(int i = 1; i < head->column_amount; i++) {
-            new_element->next = malloc(sizeof(struct element));
-            new_element = new_element->next;
-            new_element->value = header[i];
-            new_element->type = STRING;
+        if (element_head->list) {
+            struct element *tail;
+            getLast(element_head, &tail);
+            tail->next = malloc(sizeof(struct element));
+            new_element = tail->next;
+            new_element->next = NULL;
+            new_element->type = DICT;
+        } else {
+            element_head->list = malloc(sizeof(struct element));
+            new_element = element_head->list;
+            new_element->type = DICT;
+            new_element->next = NULL;
+        }
+        for(int i = 0; i < head->column_amount; i++) {
+            if (new_element->type == DICT) {
+                new_element->list = malloc(sizeof(struct element));
+                new_element = new_element->list;
+                new_element->value = header[i];
+                new_element->type = STRING;
+            } else {
+                new_element->next = malloc(sizeof(struct element));
+                new_element = new_element->next;
+                new_element->value = header[i];
+                new_element->type = STRING;
+            }
             new_element->next = malloc(sizeof(struct element));
             new_element = new_element->next;
             new_element->value = head->values[i];
             new_element->type = STRING;
         }
+        printf("\n");
         head = head->next_row;
     }
 }
