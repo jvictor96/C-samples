@@ -51,7 +51,6 @@ void to_json(struct row *head, char** header, struct element **result) {
             new_element = new_element->next;
             new_element->value = head->values[i];
         }
-        printf("\n");
         head = head->next_row;
     }
 }

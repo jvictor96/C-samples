@@ -237,8 +237,14 @@ void print_rec(struct element *head, int type, char end_line, char** result) {
 }
 
 void serialize(struct element *parsed_data, char end_line, char** result) {
-    sprintf(*result, "{%c", end_line);
-    print_rec(parsed_data->list, DICT, end_line, result);
-    sprintf(*result, "%s%c}", *result, end_line);
+    if(parsed_data->type == DICT) 
+        sprintf(*result, "{%c", end_line);
+    else
+        sprintf(*result, "[%c", end_line);
+    print_rec(parsed_data->list, parsed_data->type, end_line, result);
+    if(parsed_data->type == DICT)
+        sprintf(*result, "%s%c}", *result, end_line);
+    else
+        sprintf(*result, "%s%c]", *result, end_line);
     //printf("%s\n", *result);
 }

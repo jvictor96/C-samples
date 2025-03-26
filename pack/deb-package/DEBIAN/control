@@ -1,9 +1,0 @@
-Package: my-library
-Version: 1.0
-Section: libs
-Priority: optional
-Architecture: amd64
-Depends: libc6 (>= 2.27)
-Maintainer: Jose Victor <jvictor96@gmail.com>
-Description: My custom C library
- A simple library that provides utility functions.
