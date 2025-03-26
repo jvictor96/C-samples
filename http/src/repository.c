@@ -23,9 +23,7 @@ int post_product(char* name, char* price, int sockfd) {
 
 int to_product_json(struct row *head, struct element **result) {
     char *headers[] = {"id", "name", "price"};
-    printf("to_json\n");
     to_json(head, headers, result);
-    printf("to_json\n");
 }
 
 int get_all(struct element **result, int sockfd) {

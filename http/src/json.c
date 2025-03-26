@@ -74,14 +74,16 @@ int addValue(struct element *head, struct element **key, struct element **value)
     return 0;
 }
 
-struct element element_builder(int type) {
-    struct element new_e = {
-        .next = NULL, 
-        .prev = NULL, 
-        .list = NULL,
-        .value = NULL,
-        .type = type
-    };
+struct element *element_builder(int type) {
+    struct element *new_e = malloc(sizeof(struct element));
+
+    // Initialize fields
+    new_e->next = NULL;
+    new_e->prev = NULL;
+    new_e->list = NULL;
+    new_e->value = NULL;
+    new_e->type = type;
+
     return new_e;
 }
 
@@ -191,7 +193,6 @@ int parseString(char *string, struct element **result) {
 }
 
 void print_rec(struct element *head, int type, char end_line, char** result) {
-    printf("print_rec\n");
     int n = 1;
     //printf("%s\n", *result);
     struct element *node_ptr = head;

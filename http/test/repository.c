@@ -19,13 +19,15 @@ int main(int argc,char *argv[])
     post_product("heineken", "7.5", sockfd);
 
     struct element *result;
-    get_all(&result, sockfd);
-
     char *get_all_result = malloc(512);
-    printf("serialize\n");
+
+    get_all(&result, sockfd);
     serialize(result, ' ', &get_all_result);
-    printf("serialize\n");
+    printf("%s\n", get_all_result);
+
     get_by_name("cocacola", &result, sockfd);
+    serialize(result, ' ', &get_all_result);
+    printf("%s\n", get_all_result);
     
     close(sockfd);
 

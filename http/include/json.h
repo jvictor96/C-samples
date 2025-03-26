@@ -20,6 +20,6 @@ int parseString(char *, struct element **);
 void serialize(struct element *parsed_data, char end_line, char** result);
 int addValue(struct element *head, struct element **key, struct element **value);
 int addItem(struct element *head, struct element **item);
-struct element element_builder(int type);
+struct element *element_builder(int type);
 
 #endif
