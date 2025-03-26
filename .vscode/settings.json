@@ -21,6 +21,7 @@
         "repository.h": "c",
         "httpd.h": "c",
         "type_traits": "c",
-        "unistd.h": "c"
+        "unistd.h": "c",
+        "typeinfo": "c"
     }
 }

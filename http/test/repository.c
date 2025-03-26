@@ -1,6 +1,8 @@
 #include <repository.h>
 #include <sql.h>
+#include <stdio.h> /* printf, sprintf */
 #include <unistd.h> /* read, write, close */
+#include <stdlib.h> /* exit, atoi, malloc, free */
 
 int main(int argc,char *argv[])
 {
@@ -15,11 +17,16 @@ int main(int argc,char *argv[])
     post_product("cocacola", "4", sockfd);
     post_product("itaipava", "3", sockfd);
     post_product("heineken", "7.5", sockfd);
-    struct row *result;
+
+    struct element *result;
     get_all(&result, sockfd);
-    free_result(&result);
+
+    char *get_all_result = malloc(512);
+    printf("serialize\n");
+    serialize(result, ' ', &get_all_result);
+    printf("serialize\n");
     get_by_name("cocacola", &result, sockfd);
-    free_result(&result);
+    
     close(sockfd);
 
     return 0;

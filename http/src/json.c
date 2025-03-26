@@ -180,6 +180,7 @@ int parseString(char *string, struct element **result) {
 }
 
 void print_rec(struct element *head, int type, char end_line, char** result) {
+    printf("print_rec\n");
     int n = 1;
     //printf("%s\n", *result);
     struct element *node_ptr = head;

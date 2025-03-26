@@ -6,6 +6,7 @@
 #include <netdb.h> /* struct hostent, gethostbyname */
 #include <netinet/in.h> /* struct sockaddr_in, struct sockaddr */
 
+#include <json.h>
 #include <sql.h>
 
 struct message {
@@ -20,6 +21,36 @@ void write_int32(char *buffer, int32_t value, int p0) {
     buffer[p0+1] = (value >> 16) & 0xFF;
     buffer[p0+2] = (value >> 8)  & 0xFF;
     buffer[p0+3] = (value)       & 0xFF;
+}
+
+void to_json(struct row *head, char** header, struct element **result) {
+    struct element *new_element = malloc(sizeof(struct element));
+    new_element->type = LIST;
+    *result = new_element;
+    while(head) {
+        new_element->list = malloc(sizeof(struct element));
+        new_element = new_element->list;
+        new_element->type = DICT;
+        new_element->list = malloc(sizeof(struct element));
+        new_element = new_element->list;
+        new_element->value = header[0];
+        new_element->type = STRING;
+        new_element->next = malloc(sizeof(struct element));
+        new_element = new_element->next;
+        new_element->value = head->values[0];
+        new_element->type = STRING;
+        for(int i = 1; i < head->column_amount; i++) {
+            new_element->next = malloc(sizeof(struct element));
+            new_element = new_element->next;
+            new_element->value = header[i];
+            new_element->type = STRING;
+            new_element->next = malloc(sizeof(struct element));
+            new_element = new_element->next;
+            new_element->value = head->values[i];
+            new_element->type = STRING;
+        }
+        head = head->next_row;
+    }
 }
 
 struct message build_startup_message(char* user, char* database) {
