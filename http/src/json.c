@@ -88,8 +88,7 @@ struct element *element_builder(int type) {
 }
 
 void putElementList(struct element **result, struct element **element_ptr, int type, int list_id) {
-    struct element *new_elem = malloc(sizeof(struct element));
-    new_elem->type = type;
+    struct element *new_elem = element_builder(type);
     new_elem->size = 0;
     new_elem->prev = (*element_ptr);
     new_elem->next = NULL;
@@ -141,8 +140,7 @@ int parseString(char *string, struct element **result) {
             //printf("%p  %d\n", element_ptr, element_ptr->list_id);
             offset++;
         } else if(string[offset] == '\"') {
-            struct element *new_elem = malloc(sizeof(struct element));
-            new_elem->type = STRING;
+            struct element *new_elem = element_builder(STRING);
             new_elem->value = malloc(64);  // Allocate space for the string
             new_elem->next = NULL;
 
