@@ -10,6 +10,8 @@ int sock_sql;
 int main(int c, char** v)
 {
     sock_sql = my_connect("localhost", 5432, "jose", "jose");
+    printf("Migration Completed\n");
+    printf("Listening on 12913\n");
     ddl(sock_sql);
     serve_forever("12913");
     return 0;

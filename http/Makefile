@@ -1,15 +1,16 @@
-all: server
+CC = gcc
+CFLAGS = -Wall -I include
+SRC = src
+OBJ = main.o httpd.o sql.o repository.o json.o
+TARGET = server
+
+all: $(TARGET)
+
+$(TARGET): $(OBJ)
+	$(CC) -o $@ $^ $(CFLAGS)
+
+%.o: $(SRC)/%.c
+	$(CC) -c -o $@ $< $(CFLAGS)
 
 clean:
-	@rm -rf *.o
-	@rm -rf server
-
-server: main.o httpd.o
-	gcc -o server $^
-
-main.o: main.c httpd.h
-	gcc -c -o main.o main.c
-
-httpd.o: httpd.c httpd.h
-	gcc -c -o httpd.o httpd.c
-
+	rm -f *.o $(TARGET)
