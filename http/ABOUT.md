@@ -1,17 +1,6 @@
-# Pico HTTP Server in C 
-
-This is a very simple HTTP server for Unix, using fork(). It's very easy to use
-
-## How to use
-
-1. include header `httpd.h`
-2. write your route method, handling requests.
-3. call `serve_forever("12913")` to start serving on port 12913
-
-See `main.c`, an interesting example.
-
-To log stuff, use `fprintf(stderr, "message");`
-
-View `httpd.h` for more information
-
-based on <http://blog.abhijeetr.com/2010/04/very-simple-http-server-writen-in-c.html>
+docker build . --tag product
+docker network create CS
+docker run --name mypg --network CS -e POSTGRES_DB=jose -e POSTGRES_USER=jose -e POSTGRES_HOST_AUTH_METHOD=trust postgres -d 2
+docker run --network CS -it -p 12913:12913 product
+curl -X POST localhost:12913/product --data '{"name":"coca", "price":"5" }' 
+curl localhost:12913/product;

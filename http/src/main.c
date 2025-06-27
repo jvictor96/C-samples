@@ -9,7 +9,7 @@ int sock_sql;
 
 int main(int c, char** v)
 {
-    sock_sql = my_connect("localhost", 5432, "jose", "jose");
+    sock_sql = my_connect("mypg", 5432, "jose", "jose");
     printf("Migration Completed\n");
     printf("Listening on 12913\n");
     ddl(sock_sql);
@@ -39,9 +39,10 @@ int post_p() {
     sprintf(id_kv_c, "{\"id\": \"%d\"}", id);
     parseString(id_kv_c, &id_kv);
     addValue(product, &(id_kv->list), &(id_kv->list->next));
-    char *result;
+    char *result = malloc(2048);
     serialize(product, ' ', &result);
-    printf("%s\r\n", result);
+    printf("%s", result);
+    free(result);
 }
 
 void route()
